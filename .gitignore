@@ -32,5 +32,10 @@ Thumbs.db
 # Logs
 *.log
 
+# Testing
+.coverage
+.pytest_cache/
+htmlcov/
+
 # Config with secrets (keep templates)
 config/google_credentials.json

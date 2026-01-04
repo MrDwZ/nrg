@@ -21,6 +21,10 @@ from datetime import datetime
 from pathlib import Path
 
 import yaml
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
 
 from .connectors import SchwabConnector, FidelityCSVConnector
 from .connectors.base import AccountData

@@ -1,0 +1,26 @@
+[theses.Neocloud_CRWV]
+stress_pct = 0.35
+budget_pct = 0.08
+status = "ACTIVE"
+falsifier = "Financing terms deteriorate materially OR delivery slips beyond X weeks OR key customer credit event"
+
+[theses.Index_Core]
+stress_pct = 0.20
+budget_pct = 0.05
+status = "ACTIVE"
+falsifier = "N/A"
+
+# Example of a WATCH status thesis
+# [theses.Tech_Growth]
+# stress_pct = 0.30
+# budget_pct = 0.06
+# status = "WATCH"
+# falsifier = "Revenue growth decelerates below 20% YoY"
+# time_window_end = 2025-06-30
+
+# Unmapped positions will go to this default thesis
+[theses._UNMAPPED]
+stress_pct = 0.25
+budget_pct = 0.02
+status = "ACTIVE"
+falsifier = "N/A"

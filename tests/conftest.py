@@ -24,34 +24,36 @@ def sample_config_dir(temp_dir):
     config_dir = temp_dir / "config"
     config_dir.mkdir()
 
-    # account.yaml
-    (config_dir / "account.yaml").write_text("""
-timezone: America/Los_Angeles
-drawdown_x: 0.12
-risk_scale:
-  NORMAL: 1.0
-  HALF: 0.5
-  MIN: 0.2
+    # account.toml
+    (config_dir / "account.toml").write_text("""
+timezone = "America/Los_Angeles"
+drawdown_x = 0.12
+
+[risk_scale]
+NORMAL = 1.0
+HALF = 0.5
+MIN = 0.2
 """)
 
-    # thesis.yaml
-    (config_dir / "thesis.yaml").write_text("""
-theses:
-  Test_Thesis:
-    stress_pct: 0.30
-    budget_pct: 0.10
-    status: ACTIVE
-    falsifier: "Test invalidation"
-  Broken_Thesis:
-    stress_pct: 0.25
-    budget_pct: 0.05
-    status: BROKEN
-    falsifier: "Already broken"
-  _UNMAPPED:
-    stress_pct: 0.25
-    budget_pct: 0.02
-    status: ACTIVE
-    falsifier: "N/A"
+    # thesis.toml
+    (config_dir / "thesis.toml").write_text("""
+[theses.Test_Thesis]
+stress_pct = 0.30
+budget_pct = 0.10
+status = "ACTIVE"
+falsifier = "Test invalidation"
+
+[theses.Broken_Thesis]
+stress_pct = 0.25
+budget_pct = 0.05
+status = "BROKEN"
+falsifier = "Already broken"
+
+[theses._UNMAPPED]
+stress_pct = 0.25
+budget_pct = 0.02
+status = "ACTIVE"
+falsifier = "N/A"
 """)
 
     # mapping.csv

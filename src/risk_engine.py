@@ -15,7 +15,10 @@ from enum import Enum
 from pathlib import Path
 from typing import Optional
 
-import yaml
+try:
+    import tomllib
+except ImportError:
+    import tomli as tomllib
 
 from .connectors.base import AccountData, Position, InstrumentType
 from .storage import Storage, EquitySnapshot, ThesisMetric, PositionRecord
@@ -96,26 +99,26 @@ class RiskEngine:
         self.mappings = self._load_mappings()
 
     def _load_account_config(self) -> dict:
-        """Load account configuration from YAML."""
-        config_path = self.config_dir / "account.yaml"
+        """Load account configuration from TOML."""
+        config_path = self.config_dir / "account.toml"
         try:
-            with open(config_path) as f:
-                return yaml.safe_load(f)
+            with open(config_path, "rb") as f:
+                return tomllib.load(f)
         except Exception as e:
-            logger.warning(f"Could not load account.yaml: {e}, using defaults")
+            logger.warning(f"Could not load account.toml: {e}, using defaults")
             return {
                 "drawdown_x": 0.12,
                 "risk_scale": {"NORMAL": 1.0, "HALF": 0.5, "MIN": 0.2}
             }
 
     def _load_thesis_config(self) -> dict[str, ThesisConfig]:
-        """Load thesis configurations from YAML."""
-        config_path = self.config_dir / "thesis.yaml"
+        """Load thesis configurations from TOML."""
+        config_path = self.config_dir / "thesis.toml"
         configs = {}
 
         try:
-            with open(config_path) as f:
-                data = yaml.safe_load(f)
+            with open(config_path, "rb") as f:
+                data = tomllib.load(f)
 
             for name, cfg in data.get("theses", {}).items():
                 configs[name] = ThesisConfig(
@@ -127,7 +130,7 @@ class RiskEngine:
                     time_window_end=cfg.get("time_window_end")
                 )
         except Exception as e:
-            logger.warning(f"Could not load thesis.yaml: {e}")
+            logger.warning(f"Could not load thesis.toml: {e}")
             # Add default unmapped thesis
             configs["_UNMAPPED"] = ThesisConfig(
                 name="_UNMAPPED",

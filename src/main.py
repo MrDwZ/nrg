@@ -20,7 +20,10 @@ import time
 from datetime import datetime
 from pathlib import Path
 
-import yaml
+try:
+    import tomllib
+except ImportError:
+    import tomli as tomllib
 from dotenv import load_dotenv
 
 # Load environment variables from .env file
@@ -47,10 +50,10 @@ logger = logging.getLogger("nrg")
 
 def load_config(config_dir: str = "config") -> dict:
     """Load account configuration."""
-    config_path = Path(config_dir) / "account.yaml"
+    config_path = Path(config_dir) / "account.toml"
     try:
-        with open(config_path) as f:
-            return yaml.safe_load(f)
+        with open(config_path, "rb") as f:
+            return tomllib.load(f)
     except Exception as e:
         logger.warning(f"Could not load config: {e}")
         return {}

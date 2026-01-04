@@ -140,7 +140,7 @@ Positions map to Theses, not to sectors. A Thesis groups exposures that share th
 
 ### 4.2 Minimal Mapping Implementation
 Mapping file maintained by user:
-- `mapping.csv` or `mapping.yaml` with columns:
+- `mapping.csv` with columns:
   - symbol_pattern (exact symbol or wildcard/regex)
   - thesis
   - weight (default 1.0; allow split mapping by weight if needed)
@@ -150,7 +150,7 @@ Rules:
 - Split mapping (rare): allow a symbol to map to multiple theses by providing multiple rules with weights summing to 1.0.
 
 ### 4.3 Thesis Configuration
-`thesis.yaml` defines per-thesis parameters:
+`thesis.toml` defines per-thesis parameters:
 - stress_pct: float (e.g., 0.35)
 - budget_pct: float (e.g., 0.08)
 - falsifier: string (human text)
@@ -172,7 +172,7 @@ Equity is computed per broker account then aggregated:
 - Mode and risk_scale computed from thresholds.
 
 Config:
-- `account.yaml`
+- `account.toml`
   - drawdown_x: 0.12
   - risk_scale_normal: 1.0
   - risk_scale_half: 0.5
@@ -259,46 +259,51 @@ The agent must produce a stable tab schema so downstream formulas/charts can dep
   - `sheets_writer.py`
   - `storage.py` (SQLite/CSV persistence)
 - `/config`
-  - `account.yaml`
-  - `thesis.yaml`
-  - `mapping.csv` (or yaml)
+  - `account.toml`
+  - `thesis.toml`
+  - `mapping.csv`
 - `/docs`
   - `SETUP.md` (how to obtain Schwab tokens, where to drop Fidelity CSV, how to set env vars)
 - `requirements.txt` or `pyproject.toml`
 
 ## 12. Example Configs
 
-### 12.1 account.yaml
-```yaml
-timezone: America/Los_Angeles
-drawdown_x: 0.12
-risk_scale:
-  NORMAL: 1.0
-  HALF: 0.5
-  MIN: 0.2
-run_schedule:
-  daily_time_pt: "18:00"
+### 12.1 account.toml
+```toml
+timezone = "America/Los_Angeles"
+drawdown_x = 0.12
 
-12.2 thesis.yaml
+[risk_scale]
+NORMAL = 1.0
+HALF = 0.5
+MIN = 0.2
 
-theses:
-  Neocloud_CRWV:
-    stress_pct: 0.35
-    budget_pct: 0.08
-    status: ACTIVE
-    falsifier: "Financing terms deteriorate materially OR delivery slips beyond X weeks OR key customer credit event"
-  Index_Core:
-    stress_pct: 0.20
-    budget_pct: 0.05
-    status: ACTIVE
-    falsifier: "N/A"
+[run_schedule]
+daily_time_pt = "18:00"
+```
 
-12.3 mapping.csv
+### 12.2 thesis.toml
+```toml
+[theses.Neocloud_CRWV]
+stress_pct = 0.35
+budget_pct = 0.08
+status = "ACTIVE"
+falsifier = "Financing terms deteriorate materially OR delivery slips beyond X weeks OR key customer credit event"
 
+[theses.Index_Core]
+stress_pct = 0.20
+budget_pct = 0.05
+status = "ACTIVE"
+falsifier = "N/A"
+```
+
+### 12.3 mapping.csv
+```csv
 symbol_pattern,thesis,weight
 CRWV,Neocloud_CRWV,1.0
 SPY,Index_Core,1.0
 QQQ,Index_Core,1.0
+```
 
 13. Implementation Notes (Non-goals)
 	•	Do not place trades automatically.

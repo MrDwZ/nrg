@@ -2,7 +2,7 @@
 
 ## Prerequisites
 
-- Python 3.10 or higher
+- Python 3.9 or higher
 - pip (Python package manager)
 
 ## Installation
@@ -16,28 +16,28 @@ pip install -r requirements.txt
 
 ### 1. Account Configuration
 
-Edit `config/account.yaml` to set your drawdown thresholds:
+Edit `config/account.toml` to set your drawdown thresholds:
 
-```yaml
-timezone: America/Los_Angeles
-drawdown_x: 0.12  # 12% drawdown threshold
-risk_scale:
-  NORMAL: 1.0
-  HALF: 0.5
-  MIN: 0.2
+```toml
+timezone = "America/Los_Angeles"
+drawdown_x = 0.12  # 12% drawdown threshold
+
+[risk_scale]
+NORMAL = 1.0
+HALF = 0.5
+MIN = 0.2
 ```
 
 ### 2. Thesis Configuration
 
-Edit `config/thesis.yaml` to define your narrative buckets:
+Edit `config/thesis.toml` to define your narrative buckets:
 
-```yaml
-theses:
-  My_Thesis:
-    stress_pct: 0.35    # 35% adverse scenario
-    budget_pct: 0.08    # 8% of equity budget
-    status: ACTIVE      # ACTIVE, WATCH, or BROKEN
-    falsifier: "What would invalidate this thesis"
+```toml
+[theses.My_Thesis]
+stress_pct = 0.35    # 35% adverse scenario
+budget_pct = 0.08    # 8% of equity budget
+status = "ACTIVE"    # ACTIVE, WATCH, or BROKEN
+falsifier = "What would invalidate this thesis"
 ```
 
 ### 3. Symbol Mapping
@@ -123,11 +123,11 @@ For Gmail, use an [App Password](https://support.google.com/accounts/answer/1858
 export SLACK_WEBHOOK_URL="https://hooks.slack.com/services/xxx"
 ```
 
-Enable notifications in `config/account.yaml`:
+Enable notifications in `config/account.toml`:
 
-```yaml
-notifications:
-  enabled: true
+```toml
+[notifications]
+enabled = true
 ```
 
 ## Running

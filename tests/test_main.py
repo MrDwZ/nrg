@@ -16,9 +16,9 @@ class TestLoadConfig:
         """Test successful config loading."""
         config_dir = temp_dir / "config"
         config_dir.mkdir()
-        (config_dir / "account.yaml").write_text("""
-timezone: America/Los_Angeles
-drawdown_x: 0.15
+        (config_dir / "account.toml").write_text("""
+timezone = "America/Los_Angeles"
+drawdown_x = 0.15
 """)
 
         from src.main import load_config

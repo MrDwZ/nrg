@@ -56,6 +56,26 @@ pytest tests/ --cov=src --cov-report=term-missing --cov-fail-under=90
 2. **If coverage is below 90% → CREATE MORE TESTS before committing**
 3. **All tests must pass** - Zero tolerance for failing tests
 
+### After Every Material Code Change
+
+**MANDATORY**: After any material code change (bug fix, new feature, refactor), you MUST:
+
+1. **Run all tests**:
+   ```bash
+   pytest tests/ -v
+   ```
+
+2. **Fix any failing tests** before committing
+
+3. **Add new tests** if the change adds new functionality or edge cases
+
+4. **Check coverage** hasn't dropped below 90%:
+   ```bash
+   pytest tests/ --cov=src --cov-report=term-missing
+   ```
+
+**DO NOT commit code that breaks existing tests.**
+
 ### Test Structure
 
 ```

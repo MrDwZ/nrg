@@ -40,31 +40,21 @@ Examples:
 
 **Tests are mandatory.** All code changes must include appropriate tests.
 
-### Coverage Thresholds (STRICT)
+### Coverage Threshold (STRICT)
+
+**Minimum global coverage: 90%**
 
 Before committing, **always check coverage in real-time**:
 
 ```bash
-pytest tests/ --cov=src --cov-report=term-missing
+pytest tests/ --cov=src --cov-report=term-missing --cov-fail-under=90
 ```
-
-**Minimum coverage requirements:**
-
-| Module Type | Minimum Coverage |
-|-------------|------------------|
-| Core business logic (`risk_engine.py`) | **90%** |
-| Data persistence (`storage.py`) | **90%** |
-| Connectors (`connectors/*.py`) | **80%** |
-| Output/integration (`sheets_writer.py`, `notifications.py`) | **70%** |
-| Entry points (`main.py`) | **50%** |
-| **Overall project** | **75%** |
 
 ### Coverage Rules
 
 1. **Check coverage before every commit** - Run pytest with `--cov` flag
-2. **If any module falls below its threshold → CREATE MORE TESTS before committing**
-3. **If overall coverage falls below 75% → DO NOT COMMIT until tests are added**
-4. **All tests must pass** - Zero tolerance for failing tests
+2. **If coverage is below 90% → CREATE MORE TESTS before committing**
+3. **All tests must pass** - Zero tolerance for failing tests
 
 ### Test Structure
 

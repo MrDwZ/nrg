@@ -6,88 +6,115 @@ This is a **mono-repo** containing all NRG (Narrative Risk Guard) components.
 
 ## Version Control Guidelines
 
-### Rebase-based Workflow
+### Rebase-based Workflow (Solo Contributor)
 
-This repository uses a **rebase-based workflow** (no merge commits):
+This repository uses a **rebase-based workflow** with direct pushes to `main` (no PRs required for sole contributor):
 
-1. **Always rebase, never merge**
-   ```bash
-   git pull --rebase origin main
-   ```
+```bash
+# Standard workflow
+git add .
+git commit -m "feat: description"
+git push origin main
 
-2. **Keep commits atomic and meaningful**
-   - Each commit should represent a single logical change
-   - Write clear commit messages: `<type>: <description>`
-   - Types: `feat`, `fix`, `refactor`, `test`, `docs`, `chore`
-
-3. **Before pushing**
-   ```bash
-   git fetch origin
-   git rebase origin/main
-   ```
-
-4. **Feature branches**
-   ```bash
-   git checkout -b feature/<name>
-   # ... work ...
-   git rebase -i origin/main  # squash/fixup as needed
-   git push origin feature/<name>
-   ```
-
-5. **Pull Request rules**
-   - Rebase onto latest `main` before merging
-   - Use "Rebase and merge" or "Squash and merge" (never "Create a merge commit")
-   - Delete branch after merge
+# If remote has changes
+git pull --rebase origin main
+git push origin main
+```
 
 ### Commit Message Format
 
 ```
 <type>: <short description>
-
-[optional body]
-
-[optional footer]
 ```
+
+Types: `feat`, `fix`, `refactor`, `test`, `docs`, `chore`
 
 Examples:
 - `feat: add Schwab API position fetching`
 - `fix: correct utilization calculation for short options`
-- `refactor: extract thesis mapping to separate module`
 - `test: add risk engine mode transition tests`
 
 ---
 
 ## Testing Requirements
 
-Always create useful unit tests when writing or modifying code:
+**Tests are mandatory.** All code changes must include appropriate tests.
 
-- Every new module should have corresponding test files in `tests/`
-- Test the core logic, edge cases, and error handling
-- Use pytest as the testing framework
-- Aim for meaningful coverage of business logic, not just line coverage
+### Before Every Commit
 
-## Test Structure
+```bash
+# Run full test suite
+pytest tests/ -v
+
+# Run with coverage (aim for >80% on business logic)
+pytest tests/ --cov=src --cov-report=term-missing
+```
+
+### Test Structure
 
 ```
 tests/
-├── test_risk_engine.py
-├── test_storage.py
-├── test_connectors/
-│   ├── test_schwab.py
-│   └── test_fidelity_csv.py
-└── test_sheets_writer.py
+├── conftest.py              # Shared fixtures
+├── test_risk_engine.py      # Core risk logic tests
+├── test_storage.py          # Database operation tests
+├── test_sheets_writer.py    # Google Sheets output tests
+└── test_connectors/
+    ├── test_schwab.py       # Schwab API connector tests
+    └── test_fidelity_csv.py # Fidelity CSV parser tests
 ```
 
-## What to Test
+### What Must Be Tested
 
-1. **Risk Engine**: Mode computation, thesis utilization calculations, reduction amounts
-2. **Connectors**: Data parsing, normalization, error handling
-3. **Storage**: Database operations, data persistence
-4. **Sheets Writer**: Data formatting, schema compliance
+| Module | Required Test Coverage |
+|--------|----------------------|
+| **Risk Engine** | Mode transitions (NORMAL/HALF/MIN), utilization calculations, reduction amounts, edge cases (zero equity, negative values) |
+| **Connectors** | Data parsing, field normalization, malformed input handling, connection failures |
+| **Storage** | CRUD operations, data integrity, query correctness |
+| **Sheets Writer** | Schema compliance, data formatting, idempotency |
 
-## Running Tests
+### Testing Best Practices
+
+1. **Test the formulas** - Verify risk calculations match spec exactly:
+   ```python
+   # WorstLoss = MV * stress_pct
+   # Budget$ = Equity * budget_pct * risk_scale
+   # Utilization = WorstLoss / Budget$
+   ```
+
+2. **Test edge cases**:
+   - Zero or negative equity
+   - Empty positions
+   - Missing thesis mappings
+   - Broker connection failures
+   - Mode boundary conditions (exactly at -12%, -24%)
+
+3. **Test state transitions**:
+   - Mode changes trigger correctly
+   - Historical peak updates properly
+   - Utilization breaches generate correct actions
+
+4. **Use fixtures** - Define reusable test data in `conftest.py`
+
+5. **Mock external services** - Never call real APIs in tests:
+   - Mock Schwab API responses
+   - Use sample CSV files for Fidelity
+   - Mock Google Sheets API
+
+### Running Specific Tests
 
 ```bash
-pytest tests/ -v
-pytest tests/ --cov=src --cov-report=term-missing
+# Run single test file
+pytest tests/test_risk_engine.py -v
+
+# Run specific test
+pytest tests/test_risk_engine.py::test_mode_transitions -v
+
+# Run tests matching pattern
+pytest -k "utilization" -v
+
+# Stop on first failure
+pytest -x
+
+# Show print statements
+pytest -s
 ```

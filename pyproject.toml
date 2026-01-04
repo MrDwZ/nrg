@@ -1,0 +1,34 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "nrg"
+version = "0.1.0"
+description = "Narrative Risk Guard - Automated risk control for thesis-driven portfolios"
+readme = "docs/SETUP.md"
+requires-python = ">=3.10"
+license = {text = "MIT"}
+authors = [
+    {name = "NRG Team"}
+]
+dependencies = [
+    "PyYAML>=6.0",
+    "requests>=2.28.0",
+    "google-api-python-client>=2.100.0",
+    "google-auth>=2.23.0",
+    "google-auth-oauthlib>=1.1.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0.0",
+    "pytest-cov>=4.0.0",
+]
+
+[project.scripts]
+nrg = "src.main:main"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["src*"]

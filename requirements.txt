@@ -1,0 +1,20 @@
+# NRG - Narrative Risk Guard
+# Python 3.10+
+
+# Configuration
+PyYAML>=6.0
+
+# HTTP requests (for Schwab API)
+requests>=2.28.0
+
+# Google Sheets API
+google-api-python-client>=2.100.0
+google-auth>=2.23.0
+google-auth-oauthlib>=1.1.0
+
+# Optional: scheduling (if running as daemon)
+# schedule>=1.2.0
+
+# Development / Testing
+pytest>=7.0.0
+pytest-cov>=4.0.0

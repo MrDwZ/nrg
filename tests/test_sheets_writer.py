@@ -376,3 +376,179 @@ class TestDataFormatting:
 
         assert test_thesis_row is not None
         assert test_thesis_row[7] == ""  # Action column should be empty string
+
+
+class TestGetService:
+    """Test Google Sheets service initialization."""
+
+    @patch('src.sheets_writer.build')
+    @patch('src.sheets_writer.Credentials')
+    def test_get_service_success(self, mock_creds, mock_build):
+        """Test successful service initialization."""
+        mock_creds.from_service_account_file.return_value = MagicMock()
+        mock_build.return_value = MagicMock()
+
+        writer = SheetsWriter(
+            credentials_path="/test/creds.json",
+            sheet_id="test_sheet"
+        )
+        service = writer._get_service()
+
+        assert service is not None
+        mock_creds.from_service_account_file.assert_called_once()
+        mock_build.assert_called_once()
+
+    @patch('src.sheets_writer.build')
+    @patch('src.sheets_writer.Credentials')
+    def test_get_service_caches_service(self, mock_creds, mock_build):
+        """Test that service is cached after first call."""
+        mock_creds.from_service_account_file.return_value = MagicMock()
+        mock_service = MagicMock()
+        mock_build.return_value = mock_service
+
+        writer = SheetsWriter(
+            credentials_path="/test/creds.json",
+            sheet_id="test_sheet"
+        )
+        service1 = writer._get_service()
+        service2 = writer._get_service()
+
+        assert service1 is service2
+        # Should only be called once due to caching
+        assert mock_build.call_count == 1
+
+    @patch('src.sheets_writer.Credentials')
+    def test_get_service_failure(self, mock_creds):
+        """Test service initialization failure."""
+        mock_creds.from_service_account_file.side_effect = Exception("Auth failed")
+
+        writer = SheetsWriter(
+            credentials_path="/invalid/creds.json",
+            sheet_id="test_sheet"
+        )
+
+        with pytest.raises(Exception):
+            writer._get_service()
+
+
+class TestAPIOperations:
+    """Test low-level API operations."""
+
+    @patch.object(SheetsWriter, "_get_service")
+    def test_write_range_success(self, mock_service):
+        """Test successful range write."""
+        mock_sheets = MagicMock()
+        mock_service.return_value = mock_sheets
+
+        writer = SheetsWriter(sheet_id="test_sheet")
+        writer._write_range("Sheet1!A1:B2", [["a", "b"], [1, 2]])
+
+        mock_sheets.spreadsheets.return_value.values.return_value.update.assert_called_once()
+
+    @patch.object(SheetsWriter, "_get_service")
+    def test_write_range_http_error(self, mock_service):
+        """Test write range handles HTTP error."""
+        from googleapiclient.errors import HttpError
+        mock_sheets = MagicMock()
+        mock_resp = MagicMock()
+        mock_resp.status = 403
+        mock_sheets.spreadsheets.return_value.values.return_value.update.return_value.execute.side_effect = HttpError(mock_resp, b"Forbidden")
+        mock_service.return_value = mock_sheets
+
+        writer = SheetsWriter(sheet_id="test_sheet")
+
+        with pytest.raises(HttpError):
+            writer._write_range("Sheet1!A1", [["test"]])
+
+    @patch.object(SheetsWriter, "_get_service")
+    def test_append_row_success(self, mock_service):
+        """Test successful row append."""
+        mock_sheets = MagicMock()
+        mock_service.return_value = mock_sheets
+
+        writer = SheetsWriter(sheet_id="test_sheet")
+        writer._append_row("Sheet1", ["value1", "value2"])
+
+        mock_sheets.spreadsheets.return_value.values.return_value.append.assert_called_once()
+
+    @patch.object(SheetsWriter, "_get_service")
+    def test_append_row_http_error(self, mock_service):
+        """Test append row handles HTTP error."""
+        from googleapiclient.errors import HttpError
+        mock_sheets = MagicMock()
+        mock_resp = MagicMock()
+        mock_resp.status = 500
+        mock_sheets.spreadsheets.return_value.values.return_value.append.return_value.execute.side_effect = HttpError(mock_resp, b"Server Error")
+        mock_service.return_value = mock_sheets
+
+        writer = SheetsWriter(sheet_id="test_sheet")
+
+        with pytest.raises(HttpError):
+            writer._append_row("Sheet1", ["test"])
+
+    @patch.object(SheetsWriter, "_get_service")
+    def test_clear_range_success(self, mock_service):
+        """Test successful range clear."""
+        mock_sheets = MagicMock()
+        mock_service.return_value = mock_sheets
+
+        writer = SheetsWriter(sheet_id="test_sheet")
+        writer._clear_range("Sheet1!A:Z")
+
+        mock_sheets.spreadsheets.return_value.values.return_value.clear.assert_called_once()
+
+    @patch.object(SheetsWriter, "_get_service")
+    def test_clear_range_http_error(self, mock_service):
+        """Test clear range handles HTTP error."""
+        from googleapiclient.errors import HttpError
+        mock_sheets = MagicMock()
+        mock_resp = MagicMock()
+        mock_resp.status = 404
+        mock_sheets.spreadsheets.return_value.values.return_value.clear.return_value.execute.side_effect = HttpError(mock_resp, b"Not Found")
+        mock_service.return_value = mock_sheets
+
+        writer = SheetsWriter(sheet_id="test_sheet")
+
+        with pytest.raises(HttpError):
+            writer._clear_range("InvalidSheet!A:Z")
+
+    @patch.object(SheetsWriter, "_get_service")
+    def test_ensure_sheet_exists_http_error(self, mock_service):
+        """Test ensure sheet exists handles HTTP error."""
+        from googleapiclient.errors import HttpError
+        mock_sheets = MagicMock()
+        mock_resp = MagicMock()
+        mock_resp.status = 403
+        mock_sheets.spreadsheets.return_value.get.return_value.execute.side_effect = HttpError(mock_resp, b"Forbidden")
+        mock_service.return_value = mock_sheets
+
+        writer = SheetsWriter(sheet_id="test_sheet")
+
+        with pytest.raises(HttpError):
+            writer._ensure_sheet_exists("TestSheet")
+
+
+class TestSnapshotHttpError:
+    """Test snapshot writing with HTTP errors."""
+
+    @patch.object(SheetsWriter, "_append_row")
+    @patch.object(SheetsWriter, "_write_range")
+    @patch.object(SheetsWriter, "_ensure_sheet_exists")
+    @patch.object(SheetsWriter, "_get_service")
+    def test_write_snapshot_get_headers_error(self, mock_service, mock_ensure,
+                                               mock_write, mock_append,
+                                               sample_risk_result):
+        """Test snapshot handles error when getting existing headers."""
+        from googleapiclient.errors import HttpError
+        mock_sheets = MagicMock()
+        mock_resp = MagicMock()
+        mock_resp.status = 404
+        mock_sheets.spreadsheets.return_value.values.return_value.get.return_value.execute.side_effect = HttpError(mock_resp, b"Not Found")
+        mock_service.return_value = mock_sheets
+
+        writer = SheetsWriter(sheet_id="test_sheet")
+        writer.write_snapshot(sample_risk_result)
+
+        # Should still write headers since get failed
+        mock_write.assert_called_once()
+        mock_append.assert_called_once()

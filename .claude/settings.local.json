@@ -4,7 +4,10 @@
       "Bash(brew install:*)",
       "Bash(gh:*)",
       "Bash(pip3 install:*)",
-      "Bash(python3 -m pytest:*)"
+      "Bash(python3 -m pytest:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)"
     ]
   }
 }

@@ -1,0 +1,262 @@
+Metadata-Version: 2.4
+Name: nrg
+Version: 0.1.0
+Summary: Narrative Risk Guard - Automated risk control for thesis-driven portfolios
+Author: NRG Team
+License: MIT
+Requires-Python: >=3.9
+Description-Content-Type: text/markdown
+Requires-Dist: PyYAML>=6.0
+Requires-Dist: requests>=2.28.0
+Requires-Dist: google-api-python-client>=2.100.0
+Requires-Dist: google-auth>=2.23.0
+Requires-Dist: google-auth-oauthlib>=1.1.0
+Provides-Extra: dev
+Requires-Dist: pytest>=7.0.0; extra == "dev"
+Requires-Dist: pytest-cov>=4.0.0; extra == "dev"
+
+# NRG Setup Guide
+
+## Prerequisites
+
+- Python 3.10 or higher
+- pip (Python package manager)
+
+## Installation
+
+```bash
+cd /path/to/risk
+pip install -r requirements.txt
+```
+
+## Configuration
+
+### 1. Account Configuration
+
+Edit `config/account.yaml` to set your drawdown thresholds:
+
+```yaml
+timezone: America/Los_Angeles
+drawdown_x: 0.12  # 12% drawdown threshold
+risk_scale:
+  NORMAL: 1.0
+  HALF: 0.5
+  MIN: 0.2
+```
+
+### 2. Thesis Configuration
+
+Edit `config/thesis.yaml` to define your narrative buckets:
+
+```yaml
+theses:
+  My_Thesis:
+    stress_pct: 0.35    # 35% adverse scenario
+    budget_pct: 0.08    # 8% of equity budget
+    status: ACTIVE      # ACTIVE, WATCH, or BROKEN
+    falsifier: "What would invalidate this thesis"
+```
+
+### 3. Symbol Mapping
+
+Edit `config/mapping.csv` to map symbols to theses:
+
+```csv
+symbol_pattern,thesis,weight
+AAPL,Tech_Growth,1.0
+MSFT,Tech_Growth,1.0
+SPY,Index_Core,1.0
+```
+
+## Broker Setup
+
+### Schwab API
+
+1. Create a developer account at [Schwab Developer Portal](https://developer.schwab.com)
+2. Create an app and obtain:
+   - Client ID (App Key)
+   - Client Secret
+3. Complete OAuth flow to obtain refresh token
+4. Set environment variables:
+
+```bash
+export SCHWAB_CLIENT_ID="your_client_id"
+export SCHWAB_CLIENT_SECRET="your_client_secret"
+export SCHWAB_REFRESH_TOKEN="your_refresh_token"
+```
+
+The system will automatically refresh access tokens as needed.
+
+### Fidelity CSV
+
+Since Fidelity doesn't provide direct API access for personal accounts:
+
+1. Log into Fidelity.com
+2. Navigate to Positions
+3. Export positions as CSV
+4. Place the CSV file in `data/fidelity/` directory
+5. Set environment variable (optional):
+
+```bash
+export FIDELITY_CSV_DIR="/path/to/fidelity/csv/folder"
+```
+
+The system will automatically pick up the most recent CSV file.
+
+## Google Sheets Setup
+
+1. Create a Google Cloud Project
+2. Enable Google Sheets API
+3. Create a Service Account
+4. Download the credentials JSON file
+5. Create a new Google Sheet and share it with the service account email
+6. Set environment variables:
+
+```bash
+export GOOGLE_SHEETS_CREDENTIALS="/path/to/credentials.json"
+export GOOGLE_SHEETS_ID="your_sheet_id_from_url"
+```
+
+The sheet ID is the long string in your Google Sheet URL:
+`https://docs.google.com/spreadsheets/d/SHEET_ID_HERE/edit`
+
+## Notifications (Optional)
+
+### Email (SMTP)
+
+```bash
+export SMTP_USERNAME="your_email@gmail.com"
+export SMTP_PASSWORD="your_app_password"
+```
+
+For Gmail, use an [App Password](https://support.google.com/accounts/answer/185833).
+
+### Slack
+
+1. Create an [Incoming Webhook](https://api.slack.com/messaging/webhooks)
+2. Set environment variable:
+
+```bash
+export SLACK_WEBHOOK_URL="https://hooks.slack.com/services/xxx"
+```
+
+Enable notifications in `config/account.yaml`:
+
+```yaml
+notifications:
+  enabled: true
+```
+
+## Running
+
+### Manual Run
+
+```bash
+# Full run
+python -m src.main
+
+# Dry run (no external writes)
+python -m src.main --dry-run
+
+# Skip Google Sheets
+python -m src.main --no-sheets
+
+# Verbose output
+python -m src.main -v
+```
+
+### Scheduled Run (cron)
+
+Add to crontab (`crontab -e`):
+
+```bash
+# Run daily at 6 PM Pacific (adjust for your timezone)
+0 18 * * 1-5 cd /path/to/risk && /usr/bin/python3 -m src.main >> data/cron.log 2>&1
+```
+
+### Systemd Service (Linux)
+
+Create `/etc/systemd/system/nrg.service`:
+
+```ini
+[Unit]
+Description=NRG Risk Guard
+After=network.target
+
+[Service]
+Type=oneshot
+User=youruser
+WorkingDirectory=/path/to/risk
+ExecStart=/usr/bin/python3 -m src.main
+Environment="SCHWAB_CLIENT_ID=xxx"
+Environment="SCHWAB_CLIENT_SECRET=xxx"
+# ... other env vars
+
+[Install]
+WantedBy=multi-user.target
+```
+
+Create timer `/etc/systemd/system/nrg.timer`:
+
+```ini
+[Unit]
+Description=Run NRG daily
+
+[Timer]
+OnCalendar=Mon-Fri 18:00
+Persistent=true
+
+[Install]
+WantedBy=timers.target
+```
+
+Enable:
+
+```bash
+sudo systemctl enable nrg.timer
+sudo systemctl start nrg.timer
+```
+
+## Data Storage
+
+- SQLite database: `data/nrg.db`
+- Log file: `data/nrg.log`
+- Schwab token cache: `data/.schwab_token.json`
+
+## Troubleshooting
+
+### "No account data available"
+
+- Check broker credentials
+- For Fidelity, ensure CSV file exists in the watched directory
+- Run with `-v` for verbose output
+
+### "Token refresh failed" (Schwab)
+
+- Refresh token may have expired (90 days)
+- Re-run OAuth flow to get new refresh token
+
+### Google Sheets errors
+
+- Verify service account has edit access to the sheet
+- Check credentials file path
+- Ensure Sheets API is enabled in your GCP project
+
+### Formula Reference
+
+```
+Drawdown = (Equity - Peak) / Peak
+
+Mode:
+  NORMAL if drawdown > -X
+  HALF if -2X < drawdown <= -X
+  MIN if drawdown <= -2X
+
+WorstLoss = MV * stress_pct
+Budget$ = Equity * budget_pct * risk_scale
+Utilization = WorstLoss / Budget$
+
+If Utilization > 1:
+  TargetMV = Budget$ / stress_pct
+  Reduce$ = MV - TargetMV
+```

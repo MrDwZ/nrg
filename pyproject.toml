@@ -7,7 +7,7 @@ name = "nrg"
 version = "0.1.0"
 description = "Narrative Risk Guard - Automated risk control for thesis-driven portfolios"
 readme = "docs/SETUP.md"
-requires-python = ">=3.10"
+requires-python = ">=3.9"
 license = {text = "MIT"}
 authors = [
     {name = "NRG Team"}

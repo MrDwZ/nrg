@@ -29,7 +29,7 @@ class FidelityCSVConnector(BaseConnector):
         "symbol": ["Symbol", "symbol", "SYMBOL"],
         "description": ["Description", "description", "Security Description"],
         "quantity": ["Quantity", "quantity", "Shares", "shares", "Qty"],
-        "price": ["Last Price", "Current Value", "Price", "price", "Last"],
+        "price": ["Last Price", "Price", "price", "Last"],
         "value": ["Current Value", "Market Value", "Value", "value"],
         "account": ["Account Number", "Account", "account", "Account Name/Number"],
         "type": ["Type", "Security Type", "Asset Class"],
@@ -158,16 +158,16 @@ class FidelityCSVConnector(BaseConnector):
                     continue
 
                 # Get account ID
-                account_id = row[account_col].strip() if account_col and len(row) > account_col else "default"
+                account_id = row[account_col].strip() if account_col is not None and len(row) > account_col else "default"
                 # Clean up account ID (remove extra info)
                 account_id = account_id.split()[0] if account_id else "default"
 
                 # Get quantity
-                qty = self._parse_number(row[qty_col]) if qty_col and len(row) > qty_col else 0
+                qty = self._parse_number(row[qty_col]) if qty_col is not None and len(row) > qty_col else 0
 
                 # Get price and value
-                price = self._parse_number(row[price_col]) if price_col and len(row) > price_col else 0
-                mv = self._parse_number(row[value_col]) if value_col and len(row) > value_col else 0
+                price = self._parse_number(row[price_col]) if price_col is not None and len(row) > price_col else 0
+                mv = self._parse_number(row[value_col]) if value_col is not None and len(row) > value_col else 0
 
                 # If we have value but not price, calculate price
                 if mv and not price and qty:
@@ -178,8 +178,8 @@ class FidelityCSVConnector(BaseConnector):
                     mv = price * qty
 
                 # Get type and description
-                type_str = row[type_col].strip() if type_col and len(row) > type_col else ""
-                description = row[desc_col].strip() if desc_col and len(row) > desc_col else ""
+                type_str = row[type_col].strip() if type_col is not None and len(row) > type_col else ""
+                description = row[desc_col].strip() if desc_col is not None and len(row) > desc_col else ""
 
                 inst_type = self._determine_instrument_type(symbol, description, type_str)
                 multiplier = 100.0 if inst_type == InstrumentType.OPTION else 1.0
